@@ -1,25 +1,64 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false });
 
-const GRAVITY = 0.42;
-const JUMP = 7.2;
-const SPEED = 3.5; 
-const PIPE_GAP = 140;
-const PIPE_WIDTH = 90;
+let GRAVITY = 0.42;
+let JUMP = 7.2;
+let SPEED = 3.5;
+let PIPE_GAP = 140;
+let PIPE_WIDTH = 90;
+let PIPE_SPAWN_RATE = 115;
+let PIPE_VARIATION = 180;
 const GROUND_HEIGHT = 80;
+
+const DIFFICULTIES = {
+    'EASY': { gravity: 0.38, jump: 6.8, speed: 3.0, gap: 170, spawn: 140, variation: 150 },
+    'NORMAL': { gravity: 0.42, jump: 7.2, speed: 3.5, gap: 140, spawn: 115, variation: 230 },
+    'HARD': { gravity: 0.48, jump: 7.5, speed: 4.5, gap: 110, spawn: 90, variation: 300 }
+};
+
+let currentDifficulty = 'NORMAL';
+let gameLoopId;
+let menuLoopId;
+
+function setDifficulty(level) {
+    currentDifficulty = level;
+    const config = DIFFICULTIES[level];
+    GRAVITY = config.gravity;
+    JUMP = config.jump;
+    SPEED = config.speed;
+    PIPE_GAP = config.gap;
+    PIPE_SPAWN_RATE = config.spawn;
+    PIPE_VARIATION = config.variation;
+    
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.dataset.level === level) btn.classList.add('active');
+    });
+    
+    loadHighScore();
+}
+
+let frames = 0;
+let score = 0;
+let highScore = 0;
+let gameState = 'START';
+let pipes = [];
+let clouds = [];
+let buildings = [];
+
+function getHighScoreKey() {
+    return `flappyHighScore_${currentDifficulty}`;
+}
+
+function loadHighScore() {
+    highScore = localStorage.getItem(getHighScoreKey()) || 0;
+    document.getElementById('best-score').innerText = highScore;
+}
 
 let birdSprite;
 let groundPattern;
 let pipeGradient;
 let skyGradient;
-
-let frames = 0;
-let score = 0;
-let highScore = localStorage.getItem('flappyHighScore') || 0;
-let gameState = 'START';
-let pipes = [];
-let clouds = [];
-let buildings = [];
 
 function initRendering() {
     const bCanvas = document.createElement('canvas');
@@ -211,11 +250,22 @@ const ground = {
 }
 
 class Pipe {
-    constructor() {
+    constructor(prevHeight = null) {
         this.x = canvas.width;
         const minH = 60;
         const maxH = canvas.height - GROUND_HEIGHT - PIPE_GAP - minH;
-        this.topHeight = Math.random() * (maxH - minH) + minH;
+        
+        let targetH;
+        if (prevHeight !== null) {
+            const range = PIPE_VARIATION * 2;
+            const variation = (Math.random() * range) - PIPE_VARIATION;
+            targetH = prevHeight + variation;
+            targetH = Math.max(minH, Math.min(maxH, targetH));
+        } else {
+            targetH = Math.random() * (maxH - minH) + minH;
+        }
+
+        this.topHeight = targetH;
         this.bottomY = this.topHeight + PIPE_GAP;
         this.w = PIPE_WIDTH;
         this.passed = false;
@@ -291,7 +341,6 @@ function drawBackground() {
 }
 
 function init() {
-    initRendering();
     resize();
     bird.y = canvas.height / 2;
     bird.velocity = 0;
@@ -299,13 +348,20 @@ function init() {
     pipes = [];
     score = 0;
     frames = 0;
+    
+    loadHighScore();
+    
     document.getElementById('score').innerText = score;
-    document.getElementById('best-score').innerText = highScore;
     gameState = 'START';
     
     document.getElementById('start-screen').classList.add('active');
     document.getElementById('game-over-screen').classList.remove('active');
     document.getElementById('score').style.display = 'none';
+    
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    if (menuLoopId) cancelAnimationFrame(menuLoopId);
+    
+    menuLoop();
 }
 
 function startGame() {
@@ -314,6 +370,10 @@ function startGame() {
     document.getElementById('start-screen').classList.remove('active');
     document.getElementById('game-over-screen').classList.remove('active');
     document.getElementById('score').style.display = 'block';
+    
+    if (menuLoopId) cancelAnimationFrame(menuLoopId);
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    
     loop();
 }
 
@@ -323,20 +383,23 @@ function gameOver() {
     gameState = 'GAMEOVER';
     if (score > highScore) {
         highScore = score;
-        localStorage.setItem('flappyHighScore', highScore);
+        localStorage.setItem(getHighScoreKey(), highScore);
     }
     document.getElementById('final-score').innerText = score;
     document.getElementById('best-score').innerText = highScore;
     document.getElementById('game-over-screen').classList.add('active');
     document.getElementById('score').style.display = 'none';
+    
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
 }
 
 function loop() {
     if (gameState !== 'PLAYING') return;
     bird.update();
     
-    if (frames % 100 === 0) {
-        pipes.push(new Pipe());
+    if (frames % PIPE_SPAWN_RATE === 0) {
+        let prevH = pipes.length > 0 ? pipes[pipes.length - 1].topHeight : null;
+        pipes.push(new Pipe(prevH));
     }
     
     for (let i = 0; i < pipes.length; i++) {
@@ -354,7 +417,7 @@ function loop() {
     bird.draw();
     
     frames++;
-    requestAnimationFrame(loop);
+    gameLoopId = requestAnimationFrame(loop);
 }
 
 function menuLoop() {
@@ -365,7 +428,7 @@ function menuLoop() {
     bird.y = (canvas.height / 2) + Math.sin(frames * 0.1) * 10;
     bird.draw();
     frames++;
-    requestAnimationFrame(menuLoop);
+    menuLoopId = requestAnimationFrame(menuLoop);
 }
 
 function handleAction(e) {
@@ -397,14 +460,12 @@ document.getElementById('game-wrapper').addEventListener('touchmove', (e) => {
     e.preventDefault();
 }, { passive: false });
 
-init();
-menuLoop();
-
 class AudioController {
     constructor() {
         this.ctx = null;
         this.isPlaying = false;
         this.isMuted = false;
+        this._unlocked = false;
         
         this.tempo = 150;
         this.lookahead = 25.0; 
@@ -413,6 +474,10 @@ class AudioController {
 
         this.noteIndex = 0;
         this.nextNoteTime = 0;
+
+        this.silentAudio = new Audio();
+        this.silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADRm9vYmFyMjAwMAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgAAAAAAAAAAAAAAJTSVNFAAAAEwAAADAuMS4wLjAgKDAuMS4wLjApAP/7bmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABLuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+        this.silentAudio.volume = 0.01;
 
         this.melody = [
             [523.25, 0.5], [523.25, 0.5], [0, 0.5], [523.25, 0.5], 
@@ -435,6 +500,9 @@ class AudioController {
             e.stopPropagation();
             this.toggleMute();
         });
+
+        window.addEventListener('touchstart', () => this.unlock(), { once: true });
+        window.addEventListener('click', () => this.unlock(), { once: true });
     }
 
     init() {
@@ -448,16 +516,25 @@ class AudioController {
     }
 
     unlock() {
-        if (!this.ctx) this.init();
-        if (this.ctx.state === 'running') return;
+        if (this._unlocked) return;
+        
+        this.init();
+        
+        this.silentAudio.play().then(() => {
+            this._unlocked = true;
+        }).catch(e => {
+            console.log('Audio unlock failed', e);
+        });
+
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
         
         const buffer = this.ctx.createBuffer(1, 1, 22050);
         const source = this.ctx.createBufferSource();
         source.buffer = buffer;
         source.connect(this.ctx.destination);
         source.start(0);
-        
-        this.ctx.resume();
     }
 
     toggleMute() {
@@ -562,3 +639,6 @@ class AudioController {
 }
 
 const audioController = new AudioController();
+
+initRendering();
+init();

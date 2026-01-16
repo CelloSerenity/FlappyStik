@@ -113,6 +113,7 @@ canvas {
     pointer-events: auto;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    cursor: pointer; /* UX: Indicate clickable */
 }
 
 .screen.active {
@@ -123,6 +124,12 @@ canvas {
 @keyframes fadeIn {
     from { opacity: 0; transform: scale(1.05); }
     to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseText {
+    0% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.8; transform: scale(1); }
 }
 
 .logo {
@@ -159,12 +166,101 @@ canvas {
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
 
+.difficulty-selector {
+    margin-top: 30px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 100px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    pointer-events: auto; /* Ensure clicks pass through */
+}
+
+.diff-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.2s;
+    box-shadow: none;
+}
+
+.diff-btn:hover {
+    color: #fff;
+    transform: none;
+    filter: none;
+    background: rgba(255,255,255,0.1);
+}
+
+.diff-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: none;
+}
+
 .instruction-box p {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 1px;
     color: var(--text-color);
+    animation: pulseText 2s infinite ease-in-out;
+}
+
+.game-over-container {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+    padding: 40px;
+    width: 420px;
+    max-width: 90vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.game-over-container .logo {
+    margin-bottom: 30px;
+    font-size: 4.5rem !important; /* Slightly smaller to fit */
+}
+
+.game-over-container .score-card {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 20px;
+    padding: 0;
+    width: 100%;
+}
+
+.game-over-container .difficulty-selector {
+    background: rgba(255, 255, 255, 0.05); /* Subtle inner bg */
+    border: none;
+    margin-top: 0;
+    margin-bottom: 30px !important; /* Force margin */
+}
+
+.game-over-container .instruction-box {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    width: 100%;
 }
 
 .score-card {
@@ -225,13 +321,13 @@ button {
     border-radius: 100px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(41, 151, 255, 0.3);
+    box-shadow: none;
 }
 
 button:hover {
     transform: translateY(-2px);
     filter: brightness(1.1);
-    box-shadow: 0 6px 20px rgba(41, 151, 255, 0.4);
+    box-shadow: none;
 }
 
 button:active {
@@ -241,6 +337,18 @@ button:active {
 
 #restart-btn {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#version-tag {
+    position: absolute;
+    bottom: 15px;
+    right: 20px;
+    color: var(--secondary-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 25;
 }
 
 @media (max-width: 600px) {
