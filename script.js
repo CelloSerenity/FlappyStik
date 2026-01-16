@@ -378,7 +378,16 @@ function init() {
 }
 
 function startGame() {
-    audioController.startMusic();
+    const queryString = window.location.search; // Returns:'?q=123'
+
+    // Further parsing:
+    const params = new URLSearchParams(queryString);
+    const custom = params.get("CM")
+    if (custom == "true") {
+        audioController.playMP3("https://incompetech.com/music/royalty-free/mp3-royaltyfree/Local%20Forecast%20-%20Elevator.mp3", true);
+    } else {
+        audioController.startMusic();
+    }
     gameState = 'PLAYING';
     document.getElementById('start-screen').classList.remove('active');
     document.getElementById('game-over-screen').classList.remove('active');
@@ -400,6 +409,7 @@ function gameOver() {
         highScore = score;
         localStorage.setItem(getHighScoreKey(), highScore);
     }
+    document.dispatchEvent(new Event("statecheck"));
     document.getElementById('final-score').innerText = score;
     document.getElementById('best-score').innerText = highScore;
     document.getElementById('game-over-screen').classList.add('active');
@@ -577,6 +587,7 @@ class AudioController {
 
     toggleMute() {
         this.isMuted = !this.isMuted;
+        document.dispatchEvent(new Event("statecheck"));
         this.muteBtn.innerHTML = this.isMuted ? this.icons.off : this.icons.on;
         if (this.ctx) {
             if (this.isMuted) {
@@ -599,6 +610,25 @@ class AudioController {
         gain.gain.exponentialRampToValueAtTime(0.01, time + duration * 0.8); 
         osc.start(time);
         osc.stop(time + duration);
+    }
+    playMP3(mp3sourcepath, loop = false) {
+        if (this.isMuted || this.gameState === 'GAMEOVER' || this.isPlaying) return;
+
+        const mp3Audio = new Audio(mp3sourcepath);
+        mp3Audio.volume = 1;
+        mp3Audio.loop = loop;
+        mp3Audio.play();
+        this.isPlaying = true;
+        const stopIfNeeded = () => {
+            if (this.isMuted || this.gameState === 'GAMEOVER' || !this.isPlaying) {
+                mp3Audio.pause();
+                mp3Audio.currentTime = 0;
+                this.isPlaying = false;
+                document.removeEventListener("statecheck", stopIfNeeded);
+            }
+        };
+
+        document.addEventListener("statecheck", stopIfNeeded);
     }
 
     scheduler() {
