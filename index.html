@@ -18,7 +18,7 @@
     <meta property="twitter:description" content="Tap or press space to keep the stick flying and beat your best score in FlappyStik.">
     <meta property="twitter:image" content="https://stikstore.app/FlappyStik/assets/flappy-stik-og.png">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="game-wrapper">
@@ -29,20 +29,37 @@
                 <button id="mute-btn" aria-label="Toggle Sound">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                 </button>
-                <div id="version-tag">v1.0.4</div>
+                <div id="version-tag">v1.1.0</div>
                 <div id="start-screen" class="screen active">
                     <div class="logo">FLAPPY<br><span>STIK</span></div>
-                    <div class="instruction-box">
-                        <p>TAP / SPACE</p>
-                    </div>
                     
-                    <div class="difficulty-selector">
-                        <button class="diff-btn" data-level="BABY" onclick="setDifficulty('BABY')">BABY</button>
-                        <button class="diff-btn" data-level="EASY" onclick="setDifficulty('EASY')">EASY</button>
-                        <button class="diff-btn active" data-level="NORMAL" onclick="setDifficulty('NORMAL')">NORMAL</button>
-                        <button class="diff-btn" data-level="HARD" onclick="setDifficulty('HARD')">HARD</button>
-                        <button class="diff-btn" data-level="EXTREME" onclick="setDifficulty('EXTREME')">EXTREME</button>
-                        <button class="diff-btn" data-level="IMPOSSIBLE" onclick="setDifficulty('IMPOSSIBLE')">IMPOSSIBLE</button>
+                    <div class="mode-selector">
+                        <button id="mode-endless" class="mode-btn active" onclick="setMode('ENDLESS')">ENDLESS</button>
+                        <button id="mode-levels" class="mode-btn" onclick="setMode('LEVELS')">LEVELS</button>
+                    </div>
+
+                    <div id="endless-controls">
+                        <div class="instruction-box">
+                            <p>TAP / SPACE</p>
+                        </div>
+                        <div class="difficulty-selector">
+                            <button class="diff-btn" data-level="BABY" onclick="setDifficulty('BABY')">BABY</button>
+                            <button class="diff-btn" data-level="EASY" onclick="setDifficulty('EASY')">EASY</button>
+                            <button class="diff-btn active" data-level="NORMAL" onclick="setDifficulty('NORMAL')">NORMAL</button>
+                            <button class="diff-btn" data-level="HARD" onclick="setDifficulty('HARD')">HARD</button>
+                            <button class="diff-btn" data-level="EXTREME" onclick="setDifficulty('EXTREME')">EXTREME</button>
+                            <button class="diff-btn" data-level="IMPOSSIBLE" onclick="setDifficulty('IMPOSSIBLE')">IMPOSSIBLE</button>
+                        </div>
+                    </div>
+
+                    <div id="levels-view" style="display: none;">
+                        <div class="world-selector">
+                            <button id="world-1-btn" class="world-btn active" onclick="selectWorld(1)">WORLD 1</button>
+                            <button id="world-2-btn" class="world-btn locked">WORLD 2</button>
+                        </div>
+                        <div id="level-grid">
+                            
+                        </div>
                     </div>
                 </div>
                 <div id="game-over-screen" class="screen">
@@ -68,14 +85,19 @@
                             <button class="diff-btn" data-level="IMPOSSIBLE" onclick="setDifficulty('IMPOSSIBLE')">IMPOSSIBLE</button>
                         </div>
 
-                        <div class="instruction-box">
-                            <p>PLAY AGAIN</p>
+                        <div class="game-over-buttons">
+                            <button id="go-home-btn" class="action-btn">HOME</button>
+                            <button id="go-restart-btn" class="action-btn">PLAY AGAIN</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/powerups/shield.js"></script>
+    <script src="js/powerups/shrink.js"></script>
+    <script src="js/powerups/bonus.js"></script>
 </body>
 </html>

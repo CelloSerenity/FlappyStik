@@ -1,0 +1,5 @@
+{
+    "SHIELD": { "color": "#4facfe", "duration": 0 }, 
+    "SHRINK": { "color": "#a18cd1", "duration": 600 }, 
+    "BONUS": { "color": "#ff9a9e", "duration": 0 }
+}

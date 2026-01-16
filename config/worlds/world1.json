@@ -1,0 +1,22 @@
+{
+    "id": 1,
+    "name": "World 1",
+    "theme": {
+        "skyGradient": ["#4facfe", "#00f2fe"],
+        "groundColor": "#553c2a",
+        "groundTopColor": "#73bf2e",
+        "pipeGradient": ["#558c22", "#9ce659", "#73bf2e", "#558c22"]
+    },
+    "levels": {
+        "1": { "pipes": 10, "diff": "BABY", "powerups": [] },
+        "2": { "pipes": 15, "diff": "EASY", "powerups": ["BONUS"] },
+        "3": { "pipes": 20, "diff": "EASY", "powerups": ["BONUS"] },
+        "4": { "pipes": 25, "diff": "NORMAL", "powerups": ["BONUS", "SHIELD"] },
+        "5": { "pipes": 30, "diff": "NORMAL", "powerups": ["BONUS", "SHIELD"] },
+        "6": { "pipes": 35, "diff": "HARD", "powerups": ["BONUS", "SHIELD", "SHRINK"] },
+        "7": { "pipes": 40, "diff": "HARD", "powerups": ["BONUS", "SHIELD", "SHRINK"] },
+        "8": { "pipes": 45, "diff": "EXTREME", "powerups": ["BONUS", "SHIELD", "SHRINK"] },
+        "9": { "pipes": 50, "diff": "EXTREME", "powerups": ["BONUS", "SHIELD", "SHRINK"] },
+        "10": { "pipes": 60, "diff": "IMPOSSIBLE", "powerups": ["BONUS", "SHIELD", "SHRINK"] }
+    }
+}

@@ -62,6 +62,20 @@ canvas {
     z-index: 20;
 }
 
+#fps-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: 'Fredoka One', cursive;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    z-index: 35;
+}
+
 #mute-btn {
     position: absolute;
     top: 20px;
@@ -150,6 +164,113 @@ canvas {
 @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-15px); }
+}
+.mode-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: var(--glass-bg);
+    padding: 5px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+}
+
+.mode-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 25px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--secondary-text);
+    border-radius: 40px;
+    transition: all 0.2s;
+}
+
+.mode-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 15px rgba(41, 151, 255, 0.3);
+}
+
+#endless-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#levels-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.world-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.world-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.world-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: transparent;
+}
+
+.world-btn.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+#level-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    width: 350px;
+    max-width: 90vw;
+}
+
+.level-btn {
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-family: 'Fredoka One', cursive;
+    padding: 0;
+    border-radius: 15px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #fff;
+}
+
+.level-btn:hover:not(.locked) {
+    background: var(--primary-color);
+    border-color: transparent;
+    transform: translateY(-2px);
+}
+
+.level-btn.locked {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: rgba(0,0,0,0.3);
+    color: rgba(255,255,255,0.3);
 }
 
 .instruction-box {
@@ -354,6 +475,36 @@ button:active {
     opacity: 0.5;
     pointer-events: none;
     z-index: 25;
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 15px 0;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.action-btn:hover {
+    transform: none;
+    filter: none;
+}
+
+#go-home-btn {
+    background: var(--primary-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#go-restart-btn {
+    background: var(--primary-color);
 }
 
 @media (max-width: 600px) {
