@@ -1,15 +1,18 @@
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false });
 
-// Game Constants
 const GRAVITY = 0.42;
-const JUMP = 6.0;
+const JUMP = 7.2;
 const SPEED = 3.5; 
 const PIPE_GAP = 140;
 const PIPE_WIDTH = 90;
 const GROUND_HEIGHT = 80;
 
-// Game State
+let birdSprite;
+let groundPattern;
+let pipeGradient;
+let skyGradient;
+
 let frames = 0;
 let score = 0;
 let highScore = localStorage.getItem('flappyHighScore') || 0;
@@ -18,14 +21,102 @@ let pipes = [];
 let clouds = [];
 let buildings = [];
 
+function initRendering() {
+    const bCanvas = document.createElement('canvas');
+    bCanvas.width = 60;
+    bCanvas.height = 30;
+    const bCtx = bCanvas.getContext('2d');
+    
+    const w = 40;
+    const h = 10;
+    const r = 5;
+    const x = (60 - w) / 2;
+    const y = (30 - h) / 2;
+    
+    bCtx.translate(x + w/2, y + h/2);
+    const bx = -w/2;
+    const by = -h/2;
+
+    bCtx.fillStyle = '#8B4513'; 
+    bCtx.strokeStyle = '#3e1e09';
+    bCtx.lineWidth = 2;
+    
+    bCtx.beginPath();
+    bCtx.moveTo(bx + r, by);
+    bCtx.lineTo(bx + w - r, by);
+    bCtx.quadraticCurveTo(bx + w, by, bx + w, by + r);
+    bCtx.lineTo(bx + w, by + h - r);
+    bCtx.quadraticCurveTo(bx + w, by + h, bx + w - r, by + h);
+    bCtx.lineTo(bx + r, by + h);
+    bCtx.quadraticCurveTo(bx, by + h, bx, by + h - r);
+    bCtx.lineTo(bx, by + r);
+    bCtx.quadraticCurveTo(bx, by, bx + r, by);
+    bCtx.closePath();
+    bCtx.fill();
+    bCtx.stroke();
+
+    bCtx.strokeStyle = '#A0522D';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.moveTo(bx + 5, by + 3);
+    bCtx.lineTo(bx + 25, by + 3);
+    bCtx.moveTo(bx + 10, by + 7);
+    bCtx.lineTo(bx + 35, by + 7);
+    bCtx.stroke();
+
+    bCtx.fillStyle = '#73bf2e';
+    bCtx.strokeStyle = '#4a7c1e';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.ellipse(10, -5, 8, 4, Math.PI / 4, 0, Math.PI * 2);
+    bCtx.fill();
+    bCtx.stroke();
+    bCtx.beginPath();
+    bCtx.moveTo(6, -1);
+    bCtx.lineTo(14, -9);
+    bCtx.stroke();
+
+    birdSprite = bCanvas;
+
+    const gCanvas = document.createElement('canvas');
+    gCanvas.width = 30;
+    gCanvas.height = 25;
+    const gCtx = gCanvas.getContext('2d');
+    
+    gCtx.fillStyle = '#9ce659';
+    gCtx.beginPath();
+    gCtx.moveTo(0, 0);
+    gCtx.lineTo(15, 25);
+    gCtx.lineTo(5, 25);
+    gCtx.lineTo(-10, 0);
+    gCtx.fill();
+    gCtx.beginPath();
+    gCtx.moveTo(30, 0);
+    gCtx.lineTo(45, 25);
+    gCtx.lineTo(35, 25);
+    gCtx.lineTo(20, 0);
+    gCtx.fill();
+    
+    groundPattern = ctx.createPattern(gCanvas, 'repeat');
+
+    const pGrad = ctx.createLinearGradient(0, 0, PIPE_WIDTH, 0);
+    pGrad.addColorStop(0, '#558c22');
+    pGrad.addColorStop(0.1, '#9ce659');
+    pGrad.addColorStop(0.5, '#73bf2e');
+    pGrad.addColorStop(1, '#558c22');
+    pipeGradient = pGrad;
+}
+
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Re-init background elements based on new width
+    skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    skyGradient.addColorStop(0, '#4facfe');
+    skyGradient.addColorStop(1, '#00f2fe');
+
     initBackground();
     
-    // Adjust bird position
     bird.x = Math.min(canvas.width * 0.2, 100);
 }
 
@@ -68,60 +159,8 @@ const bird = {
         this.rotation += (targetRotation - this.rotation) * 0.1;
         ctx.rotate(this.rotation);
         
-        // --- Draw Stick ---
+        ctx.drawImage(birdSprite, -30, -15);
         
-        // Main Stick Body
-        ctx.fillStyle = '#8B4513'; // SaddleBrown
-        ctx.strokeStyle = '#3e1e09';
-        ctx.lineWidth = 2;
-        
-        // Draw a rounded rectangle manually for better control
-        const w = 40;
-        const h = 10;
-        const r = 5;
-        const x = -w/2;
-        const y = -h/2;
-        
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Wood grain / Texture details
-        ctx.strokeStyle = '#A0522D'; // Lighter brown
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 5, y + 3);
-        ctx.lineTo(x + 25, y + 3);
-        ctx.moveTo(x + 10, y + 7);
-        ctx.lineTo(x + 35, y + 7);
-        ctx.stroke();
-
-        // A small leaf to make it "organic"
-        ctx.fillStyle = '#73bf2e';
-        ctx.strokeStyle = '#4a7c1e';
-        ctx.lineWidth = 1;
-        
-        ctx.beginPath();
-        ctx.ellipse(10, -5, 8, 4, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        // Leaf vein
-        ctx.beginPath();
-        ctx.moveTo(6, -1);
-        ctx.lineTo(14, -9);
-        ctx.stroke();
-
         ctx.restore();
     },
     
@@ -142,35 +181,31 @@ const bird = {
     
     flap: function() {
         this.velocity = -JUMP;
+        audioController.playJump();
     }
 };
 
 const ground = {
     draw: function() {
+        const topY = canvas.height - GROUND_HEIGHT;
+        
         ctx.fillStyle = '#553c2a';
-        ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
+        ctx.fillRect(0, topY, canvas.width, GROUND_HEIGHT);
         
         ctx.fillStyle = '#73bf2e';
-        ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, 25);
+        ctx.fillRect(0, topY, canvas.width, 25);
         
-        // Scrolling grass pattern
-        ctx.fillStyle = '#9ce659';
-        const patternWidth = 30;
-        const offset = (frames * SPEED) % patternWidth;
-        for (let i = -patternWidth; i < canvas.width; i += patternWidth) {
-            ctx.beginPath();
-            ctx.moveTo(i - offset, canvas.height - GROUND_HEIGHT);
-            ctx.lineTo(i - offset + 15, canvas.height - GROUND_HEIGHT + 25);
-            ctx.lineTo(i - offset + 5, canvas.height - GROUND_HEIGHT + 25);
-            ctx.lineTo(i - offset - 10, canvas.height - GROUND_HEIGHT);
-            ctx.fill();
-        }
+        ctx.save();
+        ctx.translate(-(frames * SPEED) % 30, topY);
+        ctx.fillStyle = groundPattern;
+        ctx.fillRect(0, 0, canvas.width + 30, 25);
+        ctx.restore();
         
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height - GROUND_HEIGHT);
-        ctx.lineTo(canvas.width, canvas.height - GROUND_HEIGHT);
+        ctx.moveTo(0, topY);
+        ctx.lineTo(canvas.width, topY);
         ctx.stroke();
     }
 }
@@ -187,31 +222,28 @@ class Pipe {
     }
 
     draw() {
-        const grad = ctx.createLinearGradient(this.x, 0, this.x + this.w, 0);
-        grad.addColorStop(0, '#558c22');
-        grad.addColorStop(0.1, '#9ce659');
-        grad.addColorStop(0.5, '#73bf2e');
-        grad.addColorStop(1, '#558c22');
-
-        ctx.fillStyle = grad;
+        ctx.save();
+        ctx.translate(this.x, 0);
+        
+        ctx.fillStyle = pipeGradient;
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
 
-        // Pipes
-        ctx.fillRect(this.x, 0, this.w, this.topHeight);
-        ctx.strokeRect(this.x, -5, this.w, this.topHeight + 5);
+        ctx.fillRect(0, 0, this.w, this.topHeight);
+        ctx.strokeRect(0, -5, this.w, this.topHeight + 5);
         
         const bottomH = canvas.height - this.bottomY - GROUND_HEIGHT;
-        ctx.fillRect(this.x, this.bottomY, this.w, bottomH);
-        ctx.strokeRect(this.x, this.bottomY, this.w, bottomH);
+        ctx.fillRect(0, this.bottomY, this.w, bottomH);
+        ctx.strokeRect(0, this.bottomY, this.w, bottomH);
         
-        // Caps
         const capH = 30;
         const capOverhang = 6;
-        ctx.fillRect(this.x - capOverhang, this.topHeight - capH, this.w + capOverhang * 2, capH);
-        ctx.strokeRect(this.x - capOverhang, this.topHeight - capH, this.w + capOverhang * 2, capH);
-        ctx.fillRect(this.x - capOverhang, this.bottomY, this.w + capOverhang * 2, capH);
-        ctx.strokeRect(this.x - capOverhang, this.bottomY, this.w + capOverhang * 2, capH);
+        ctx.fillRect(-capOverhang, this.topHeight - capH, this.w + capOverhang * 2, capH);
+        ctx.strokeRect(-capOverhang, this.topHeight - capH, this.w + capOverhang * 2, capH);
+        ctx.fillRect(-capOverhang, this.bottomY, this.w + capOverhang * 2, capH);
+        ctx.strokeRect(-capOverhang, this.bottomY, this.w + capOverhang * 2, capH);
+
+        ctx.restore();
     }
 
     update() {
@@ -223,6 +255,7 @@ class Pipe {
         }
         if (this.x + this.w < bird.x && !this.passed) {
             score++;
+            audioController.playScore();
             document.getElementById('score').innerText = score;
             this.passed = true;
         }
@@ -230,15 +263,12 @@ class Pipe {
 }
 
 function drawBackground() {
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGrad.addColorStop(0, '#4facfe');
-    skyGrad.addColorStop(1, '#00f2fe');
-    ctx.fillStyle = skyGrad;
+    ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = '#a3d8f4';
     const cityWidth = 400;
-    const cityOffset = (frames * 0.8) % cityWidth;
+    const cityOffset = (frames * 0.2) % cityWidth;
     
     for (let r = -1; r < (canvas.width / cityWidth) + 1; r++) {
         let baseX = r * cityWidth - cityOffset;
@@ -249,8 +279,9 @@ function drawBackground() {
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     for (let c of clouds) {
-        c.x -= c.s;
+        c.x -= c.s * 0.2;
         if (c.x + c.w < -100) c.x = canvas.width + 100;
+        
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.w/3, 0, Math.PI * 2);
         ctx.arc(c.x + c.w/4, c.y - c.w/4, c.w/3, 0, Math.PI * 2);
@@ -260,6 +291,7 @@ function drawBackground() {
 }
 
 function init() {
+    initRendering();
     resize();
     bird.y = canvas.height / 2;
     bird.velocity = 0;
@@ -277,6 +309,7 @@ function init() {
 }
 
 function startGame() {
+    audioController.startMusic();
     gameState = 'PLAYING';
     document.getElementById('start-screen').classList.remove('active');
     document.getElementById('game-over-screen').classList.remove('active');
@@ -285,6 +318,8 @@ function startGame() {
 }
 
 function gameOver() {
+    audioController.stopMusic();
+    audioController.playCrash();
     gameState = 'GAMEOVER';
     if (score > highScore) {
         highScore = score;
@@ -300,7 +335,6 @@ function loop() {
     if (gameState !== 'PLAYING') return;
     bird.update();
     
-    // Pipe spawn frequency adjusted for speed
     if (frames % 100 === 0) {
         pipes.push(new Pipe());
     }
@@ -334,11 +368,10 @@ function menuLoop() {
     requestAnimationFrame(menuLoop);
 }
 
-// Unified Input Handler
 function handleAction(e) {
+    audioController.unlock();
     if (e.type === 'keydown' && e.code !== 'Space') return;
     if (e.type === 'touchstart' || e.code === 'Space') {
-        // Prevent default behavior only for game controls to allow UI interactions elsewhere if needed
         e.preventDefault(); 
     }
 
@@ -346,32 +379,186 @@ function handleAction(e) {
         startGame();
     } else if (gameState === 'PLAYING') {
         bird.flap();
+    } else if (gameState === 'GAMEOVER') {
+        init();
+        startGame();
     }
 }
 
-// Event Listeners
 window.addEventListener('resize', resize);
 window.addEventListener('keydown', handleAction);
 
-// Use 'pointerdown' for better cross-device support (covers mouse and touch)
-// We attach to window to catch clicks anywhere
 window.addEventListener('pointerdown', (e) => {
-    // Ignore clicks on buttons (let them handle themselves)
     if (e.target.tagName === 'BUTTON') return;
     handleAction(e);
 });
 
-// Prevent default touch behaviors (scrolling/zooming) on the game container
 document.getElementById('game-wrapper').addEventListener('touchmove', (e) => {
     e.preventDefault();
 }, { passive: false });
 
-document.getElementById('restart-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    init();
-    menuLoop();
-});
-
-// Start
 init();
 menuLoop();
+
+class AudioController {
+    constructor() {
+        this.ctx = null;
+        this.isPlaying = false;
+        this.isMuted = false;
+        
+        this.tempo = 150;
+        this.lookahead = 25.0; 
+        this.scheduleAheadTime = 0.1;
+        this.timerID = null;
+
+        this.noteIndex = 0;
+        this.nextNoteTime = 0;
+
+        this.melody = [
+            [523.25, 0.5], [523.25, 0.5], [0, 0.5], [523.25, 0.5], 
+            [0, 0.5], [392.00, 0.5], [523.25, 0.5], [659.25, 0.5],
+            [783.99, 0.5], [0, 0.5], [659.25, 0.5], [0, 0.5],
+            [523.25, 0.5], [0, 0.5], [392.00, 1.0],
+            [698.46, 0.5], [698.46, 0.5], [0, 0.5], [698.46, 0.5],
+            [783.99, 0.5], [783.99, 0.5], [0, 0.5], [783.99, 0.5],
+            [523.25, 0.5], [659.25, 0.5], [783.99, 0.5], [523.25, 0.5],
+            [0, 0.5], [1046.50, 0.5], [1046.50, 0.5], [0, 0.5]
+        ];
+
+        this.muteBtn = document.getElementById('mute-btn');
+        this.icons = {
+            on: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
+            off: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>'
+        };
+
+        this.muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMute();
+        });
+    }
+
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    unlock() {
+        if (!this.ctx) this.init();
+        if (this.ctx.state === 'running') return;
+        
+        const buffer = this.ctx.createBuffer(1, 1, 22050);
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.ctx.destination);
+        source.start(0);
+        
+        this.ctx.resume();
+    }
+
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        this.muteBtn.innerHTML = this.isMuted ? this.icons.off : this.icons.on;
+        if (this.ctx) {
+            if (this.isMuted) {
+                this.ctx.suspend();
+            } else {
+                this.ctx.resume();
+            }
+        }
+    }
+
+    playTone(freq, time, duration, vol=0.05) {
+        if (this.isMuted || freq <= 0) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        gain.gain.setValueAtTime(vol, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration * 0.8); 
+        osc.start(time);
+        osc.stop(time + duration);
+    }
+
+    scheduler() {
+        if (!this.isPlaying) return;
+        const secondsPerBeat = 60.0 / this.tempo;
+        while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+            const note = this.melody[this.noteIndex];
+            this.playTone(note[0], this.nextNoteTime, note[1] * secondsPerBeat);
+            this.nextNoteTime += note[1] * secondsPerBeat;
+            this.noteIndex = (this.noteIndex + 1) % this.melody.length;
+        }
+        this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
+    }
+
+    startMusic() {
+        this.init();
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        this.noteIndex = 0;
+        this.nextNoteTime = this.ctx.currentTime + 0.1;
+        this.scheduler();
+    }
+
+    stopMusic() {
+        this.isPlaying = false;
+        if (this.timerID) clearTimeout(this.timerID);
+    }
+
+    playJump() {
+        if (!this.ctx || this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    }
+    
+    playScore() {
+        if (!this.ctx || this.isMuted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1500, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+    }
+    
+    playCrash() {
+        if (!this.ctx || this.isMuted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+    }
+}
+
+const audioController = new AudioController();
