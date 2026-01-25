@@ -140,12 +140,18 @@ function setDifficulty(level) {
     });
     
     loadHighScore();
+
+    if (gameState === 'GAMEOVER') {
+        finalScoreEl.innerText = '0';
+        scoreEl.innerText = '0';
+    }
 }
 
 let frames = 0;
 let score = 0;
 let highScore = 0;
 let gameState = 'START';
+let canRestartAt = 0;
 let pipes = [];
 let pipePool = [];
 let powerups = [];
@@ -885,6 +891,7 @@ function init() {
     });
     document.getElementById('go-restart-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (performance.now() < canRestartAt) return;
         if (gameMode === 'LEVELS') {
             startLevel(activeLevel);
         } else {
@@ -941,6 +948,7 @@ function gameOver() {
     audioController.stopMusic();
     audioController.playCrash();
     gameState = 'GAMEOVER';
+    canRestartAt = performance.now() + 1000;
     if (score > highScore) {
         highScore = score;
         localStorage.setItem(getHighScoreKey(), highScore);
@@ -1073,6 +1081,7 @@ function handleAction(e) {
     } else if (gameState === 'PLAYING') {
         bird.flap();
     } else if (gameState === 'GAMEOVER') {
+        if (performance.now() < canRestartAt) return;
         if (gameMode === 'LEVELS') {
             startLevel(activeLevel);
         } else {
@@ -1101,6 +1110,7 @@ document.getElementById('go-home-btn').addEventListener('click', (e) => {
 
 document.getElementById('go-restart-btn').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (performance.now() < canRestartAt) return;
     init();
     startGame();
 });
